@@ -11,9 +11,11 @@ using namespace std;
 
 int main() {
 	
-	string Base64_char = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-
-	// ofstream NewFile потрібно буде зробити для опції вибору створити чи використати уже існуючи, але це виведення
+	string Base64_char = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	
+	//string NameFile;
+	//cout << "Enter name file";
+	//cin >> NameFile;
 
 	ifstream ReadFile("D:\\Study\\University\\API\\Вase64_fail\\read.txt", ios::binary);
 	
@@ -45,43 +47,30 @@ int main() {
 			break;
 		}
 
-		//cout << "Saze: " << ReadSize << " -> ";
-		/*
-		for (int i = 0; i < ReadSize; i++) {
-			cout << byte[i] << " = " << bitset<8>(byte[i]) << "\n";
-		}
-		*/
-
-		//cout << byte[0] << byte[1] << byte[2] << " = " << bitset<8>(byte[0]) << bitset<8>(byte[1]) << bitset<8>(byte[2]);
-		//cout << endl << endl;
-
 		if (ReadSize == 3) {
 			ind1 = byte[0] >> 2;
 			ind2 = ((byte[0] & 3) << 4) ^ (byte[1] >> 4);
 			ind3 = ((byte[1] & 15) << 2) ^ (byte[2] >> 6);
 			ind4 = byte[2] & 63;
+
+			WriteFile << Base64_char[ind1] << Base64_char[ind2] << Base64_char[ind3] << Base64_char[ind4];
 		}
 		else if (ReadSize == 2) {
 			ind1 = byte[0] >> 2;
 			ind2 = ((byte[0] & 3) << 4) ^ (byte[1] >> 4);
 			ind3 = ((byte[1] & 15) << 2);
-			ind4 = 64;
+			
+			WriteFile << Base64_char[ind1] << Base64_char[ind2] << Base64_char[ind3] << "=";
 		}
 		else {
 			ind1 = byte[0] >> 2;
 			ind2 = ((byte[0] & 3) << 4);
-			ind3 = 64;
-			ind4 = 64;
+
+			WriteFile << Base64_char[ind1] << Base64_char[ind2] << "==";
 		}
-
-		//cout << bitset<6>(ind1) << endl;
-		//cout << bitset<6>(ind2) << endl;
-		//cout << bitset<6>(ind3) << endl;
-		//cout << bitset<6>(ind4) << endl;
-
-		WriteFile << Base64_char[ind1] << Base64_char[ind2] << Base64_char[ind3] << Base64_char[ind4];
 	}
 
+	WriteFile.close();
 
 	return 0;
 }
