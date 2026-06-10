@@ -97,26 +97,130 @@ void encode(const string& inputName, const string& outputName, const string& com
     cout << "Encoding complete. Result saved to \"" << outputName << "\"\n";
 }
 
-int main() {
-    string inputName, outputName, comment;
+// Повертає індекс символу в Base64 алфавіті, або -1 якщо символ не знайдено
+int base64Index(char c) {
+    size_t pos = BASE64_CHARS.find(c);
+    if (pos == string::npos) return -1;
+    return (int)pos;
+}
 
-    cout << "=== Base64 Encoder ===\n\n";
-
-    cout << "Enter input file name: ";
-    getline(cin, inputName);
-
-    cout << "Enter output file name (press Enter to skip): ";
-    getline(cin, outputName);
-
-    if (outputName.empty()) {
-        outputName = inputName + ".base64";
-        cout << "Output file: " << outputName << "\n";
+void decode(const string& inputName, const string& outputName) {
+    ifstream readFile(inputName);
+    if (!readFile) {
+        cout << "Error: could not open file \"" << inputName << "\"\n";
+        return;
     }
 
-    cout << "Enter a comment for the file (press Enter to skip): ";
-    getline(cin, comment);
+    ofstream writeFile(outputName, ios::binary);
+    if (!writeFile) {
+        cout << "Error: could not create file \"" << outputName << "\"\n";
+        return;
+    }
 
-    encode(inputName, outputName, comment);
+    string line;
+
+    while (getline(readFile, line)) {
+        // Пропускаємо рядки-коментарі (починаються з '-')
+        if (!line.empty() && line[0] == '-') {
+            continue;
+        }
+
+        // Обробляємо рядок по 4 символи
+        int i = 0;
+        while (i < (int)line.size()) {
+            // Зчитуємо блок з 4 символів
+            char c1 = line[i];
+            char c2 = (i + 1 < (int)line.size()) ? line[i + 1] : '=';
+            char c3 = (i + 2 < (int)line.size()) ? line[i + 2] : '=';
+            char c4 = (i + 3 < (int)line.size()) ? line[i + 3] : '=';
+            i += 4;
+
+            int v1 = base64Index(c1);
+            int v2 = base64Index(c2);
+            int v3 = (c3 == '=') ? 0 : base64Index(c3);
+            int v4 = (c4 == '=') ? 0 : base64Index(c4);
+
+            // Перший байт завжди є
+            unsigned char byte1 = (v1 << 2) | (v2 >> 4);
+            writeFile.put(byte1);
+
+            // Другий байт — тільки якщо c3 не паддінг
+            if (c3 != '=') {
+                unsigned char byte2 = ((v2 & 0x0F) << 4) | (v3 >> 2);
+                writeFile.put(byte2);
+            }
+
+            // Третій байт — тільки якщо c4 не паддінг
+            if (c4 != '=') {
+                unsigned char byte3 = ((v3 & 0x03) << 6) | v4;
+                writeFile.put(byte3);
+            }
+        }
+    }
+
+    writeFile.close();
+    readFile.close();
+
+    cout << "Decoding complete. Result saved to \"" << outputName << "\"\n";
+}
+
+int main() {
+    int choice;
+
+    cout << "=== Base64 Encoder/Decoder ===\n\n";
+    cout << "1. Encode\n";
+    cout << "2. Decode\n";
+    cout << "Choose: ";
+    cin >> choice;
+    cin.ignore();
+
+    if (choice == 1) {
+        string inputName, outputName, comment;
+
+        cout << "\n--- Encoder ---\n";
+        cout << "Enter input file name: ";
+        getline(cin, inputName);
+
+        cout << "Enter output file name (press Enter to skip): ";
+        getline(cin, outputName);
+
+        if (outputName.empty()) {
+            outputName = inputName + ".base64";
+            cout << "Output file: " << outputName << "\n";
+        }
+
+        cout << "Enter a comment for the file (press Enter to skip): ";
+        getline(cin, comment);
+
+        encode(inputName, outputName, comment);
+    }
+    else if (choice == 2) {
+        string inputName, outputName;
+
+        cout << "\n--- Decoder ---\n";
+        cout << "Enter encoded file name: ";
+        getline(cin, inputName);
+
+        // Пропонуємо ім'я: якщо файл має розширення .base64 — прибираємо його
+        string suggestedName = inputName;
+        if (inputName.size() > 7 && inputName.substr(inputName.size() - 7) == ".base64") {
+            suggestedName = inputName.substr(0, inputName.size() - 7);
+            cout << "Suggested output file name: \"" << suggestedName << "\"\n";
+        }
+
+        cout << "Enter output file name: ";
+        getline(cin, outputName);
+
+        if (outputName.empty()) {
+            outputName = suggestedName;
+            cout << "Output file: " << outputName << "\n";
+        }
+
+        decode(inputName, outputName);
+    }
+    else {
+        cout << "Invalid choice.\n";
+    }
 
     return 0;
 }
