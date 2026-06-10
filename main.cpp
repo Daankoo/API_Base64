@@ -1,4 +1,4 @@
-#include <iostream>
+п»ї#include <iostream>
 #include <fstream>
 #include <string>
 
@@ -7,7 +7,7 @@ using namespace std;
 const string BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const int LINE_LENGTH = 76;
 
-// Записує символ у файл, автоматично розбиваючи на рядки по 76 символів
+// Р’РёРІРѕРґРёС‚СЊ СЃРёРјРІРѕР» Сѓ С„Р°Р№Р» Р· Р°РІС‚РѕРјР°С‚РёС‡РЅРёРј РїРµСЂРµРЅРѕСЃРѕРј СЂСЏРґРєР° РєРѕР¶РЅС– 76 СЃРёРјРІРѕР»С–РІ
 void writeChar(ofstream& file, char c, int& linePos) {
     if (linePos == LINE_LENGTH) {
         file << '\n';
@@ -30,9 +30,7 @@ void encode(const string& inputName, const string& outputName, const string& com
         return;
     }
 
-    // Записуємо коментар якщо є
     if (!comment.empty()) {
-        // Символ '-' + текст, не більше 76 символів загалом
         string commentLine = "-" + comment;
         if (commentLine.length() > LINE_LENGTH) {
             commentLine = commentLine.substr(0, LINE_LENGTH);
@@ -66,6 +64,7 @@ void encode(const string& inputName, const string& outputName, const string& com
             writeChar(writeFile, BASE64_CHARS[ind4], linePos);
         }
         else if (readSize == 2) {
+            // Р”РІР° Р±Р°Р№С‚Рё в†’ С‚СЂРё Base64-СЃРёРјРІРѕР»Рё + РѕРґРёРЅ РїР°РґРґС–РЅРі '='
             ind1 = bytes[0] >> 2;
             ind2 = ((bytes[0] & 3) << 4) | (bytes[1] >> 4);
             ind3 = ((bytes[1] & 15) << 2);
@@ -75,7 +74,8 @@ void encode(const string& inputName, const string& outputName, const string& com
             writeChar(writeFile, BASE64_CHARS[ind3], linePos);
             writeChar(writeFile, '=', linePos);
         }
-        else { // readSize == 1
+        else {
+            // РћРґРёРЅ Р±Р°Р№С‚ в†’ РґРІР° Base64-СЃРёРјРІРѕР»Рё + РґРІР° РїР°РґРґС–РЅРіРё '=='
             ind1 = bytes[0] >> 2;
             ind2 = ((bytes[0] & 3) << 4);
 
@@ -86,7 +86,6 @@ void encode(const string& inputName, const string& outputName, const string& com
         }
     }
 
-    // Завершальний перенос рядка якщо файл не порожній
     if (linePos > 0) {
         writeFile << '\n';
     }
@@ -97,11 +96,16 @@ void encode(const string& inputName, const string& outputName, const string& com
     cout << "Encoding complete. Result saved to \"" << outputName << "\"\n";
 }
 
-// Повертає індекс символу в Base64 алфавіті, або -1 якщо символ не знайдено
+// РџРѕРІРµСЂС‚Р°С” С–РЅРґРµРєСЃ СЃРёРјРІРѕР»Сѓ РІ Base64-Р°Р»С„Р°РІС–С‚С–, Р°Р±Рѕ -1 СЏРєС‰Рѕ СЃРёРјРІРѕР» РЅРµ РІС…РѕРґРёС‚СЊ РґРѕ Р°Р»С„Р°РІС–С‚Сѓ
 int base64Index(char c) {
     size_t pos = BASE64_CHARS.find(c);
     if (pos == string::npos) return -1;
     return (int)pos;
+}
+
+// РћСЃС‚Р°РЅРЅС–Р№ СЂСЏРґРѕРє РІРёР·РЅР°С‡Р°С”С‚СЊСЃСЏ РґРѕРІР¶РёРЅРѕСЋ РјРµРЅС€РѕСЋ Р·Р° 76 Р°Р±Рѕ РЅР°СЏРІРЅС–СЃС‚СЋ СЃРёРјРІРѕР»Сѓ РїР°РґРґС–РЅРіСѓ '='
+bool isLastLine(const string& line) {
+    return (int)line.size() < LINE_LENGTH || line.find('=') != string::npos;
 }
 
 void decode(const string& inputName, const string& outputName) {
@@ -118,43 +122,101 @@ void decode(const string& inputName, const string& outputName) {
     }
 
     string line;
+    int lineNum = 0;
+    bool messageEnded = false;
 
     while (getline(readFile, line)) {
-        // Пропускаємо рядки-коментарі (починаються з '-')
+        lineNum++;
+
+        // Р СЏРґРєРё-РєРѕРјРµРЅС‚Р°СЂС– РїРѕС‡РёРЅР°СЋС‚СЊСЃСЏ Р· '-' С– РїСЂРѕРїСѓСЃРєР°СЋС‚СЊСЃСЏ РґРµРєРѕРґРµСЂРѕРј
         if (!line.empty() && line[0] == '-') {
             continue;
         }
 
-        // Обробляємо рядок по 4 символи
-        int i = 0;
-        while (i < (int)line.size()) {
-            // Зчитуємо блок з 4 символів
+        // Р‘СѓРґСЊ-СЏРєРёР№ РЅРµ-РєРѕРјРµРЅС‚Р°СЂРЅРёР№ СЂСЏРґРѕРє РїС–СЃР»СЏ РєС–РЅС†СЏ РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ С” РЅРµРєРѕСЂРµРєС‚РЅРёРј
+        if (messageEnded) {
+            cout << "Warning: data found after end of message (line " << lineNum << ")\n";
+            break;
+        }
+
+        // РЈСЃС– СЂСЏРґРєРё РєСЂС–Рј РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ РјР°СЋС‚СЊ Р±СѓС‚Рё СЂС–РІРЅРѕ 76 СЃРёРјРІРѕР»С–РІ;
+        // РѕСЃС‚Р°РЅРЅС–Р№ РјРѕР¶Рµ Р±СѓС‚Рё РєРѕСЂРѕС‚С€РёРј Р°Р±Рѕ РјС–СЃС‚РёС‚Рё РїР°РґРґС–РЅРі
+        if ((int)line.size() != LINE_LENGTH) {
+            if (line.size() % 4 != 0) {
+                cout << "Line " << lineNum << ": Invalid line length (" << line.size() << ")\n";
+                writeFile.close();
+                readFile.close();
+                return;
+            }
+        }
+
+        // РџРѕСЃРёРјРІРѕР»СЊРЅР° РІР°Р»С–РґР°С†С–СЏ СЂСЏРґРєР°
+        bool paddingStarted = false;
+        for (int i = 0; i < (int)line.size(); i++) {
+            char c = line[i];
+
+            // РЎРёРјРІРѕР» '-' РґРѕРїСѓСЃС‚РёРјРёР№ С‚С–Р»СЊРєРё РЅР° РїРµСЂС€С–Р№ РїРѕР·РёС†С–С— СЂСЏРґРєР° (РєРѕРјРµРЅС‚Р°СЂ)
+            if (c == '-') {
+                cout << "Line " << lineNum << ", symbol " << (i + 1) << ": Invalid input character (`-')\n";
+                writeFile.close();
+                readFile.close();
+                return;
+            }
+
+            // РџР°РґРґС–РЅРі '=' РґРѕРїСѓСЃС‚РёРјРёР№ С‚С–Р»СЊРєРё РІ РѕСЃС‚Р°РЅРЅС–С… РґРІРѕС… РїРѕР·РёС†С–СЏС… РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ Р±Р»РѕРєСѓ СЂСЏРґРєР°
+            if (c == '=') {
+                int posInBlock = i % 4;
+                bool isNearEnd = (i >= (int)line.size() - 2);
+
+                if (!isNearEnd || posInBlock < 2) {
+                    cout << "Line " << lineNum << ", symbol " << (i + 1) << ": Invalid padding usage\n";
+                    writeFile.close();
+                    readFile.close();
+                    return;
+                }
+                paddingStarted = true;
+                continue;
+            }
+
+            // РџС–СЃР»СЏ СЃРёРјРІРѕР»Сѓ РїР°РґРґС–РЅРіСѓ РЅРµ РјРѕР¶Рµ Р№С‚Рё Р¶РѕРґРµРЅ С–РЅС€РёР№ СЃРёРјРІРѕР»
+            if (paddingStarted) {
+                cout << "Line " << lineNum << ", symbol " << (i + 1) << ": Invalid padding usage\n";
+                writeFile.close();
+                readFile.close();
+                return;
+            }
+
+            if (base64Index(c) == -1) {
+                cout << "Line " << lineNum << ", symbol " << (i + 1) << ": Invalid input character (`" << c << "')\n";
+                writeFile.close();
+                readFile.close();
+                return;
+            }
+        }
+
+        // Р”РµРєРѕРґСѓРІР°РЅРЅСЏ Р±Р»РѕРєР°РјРё РїРѕ 4 СЃРёРјРІРѕР»Рё в†’ РґРѕ 3 Р±Р°Р№С‚С–РІ
+        for (int i = 0; i < (int)line.size(); i += 4) {
             char c1 = line[i];
-            char c2 = (i + 1 < (int)line.size()) ? line[i + 1] : '=';
-            char c3 = (i + 2 < (int)line.size()) ? line[i + 2] : '=';
-            char c4 = (i + 3 < (int)line.size()) ? line[i + 3] : '=';
-            i += 4;
+            char c2 = line[i + 1];
+            char c3 = line[i + 2];
+            char c4 = line[i + 3];
 
             int v1 = base64Index(c1);
             int v2 = base64Index(c2);
             int v3 = (c3 == '=') ? 0 : base64Index(c3);
             int v4 = (c4 == '=') ? 0 : base64Index(c4);
 
-            // Перший байт завжди є
-            unsigned char byte1 = (v1 << 2) | (v2 >> 4);
-            writeFile.put(byte1);
+            writeFile.put((unsigned char)((v1 << 2) | (v2 >> 4)));
 
-            // Другий байт — тільки якщо c3 не паддінг
-            if (c3 != '=') {
-                unsigned char byte2 = ((v2 & 0x0F) << 4) | (v3 >> 2);
-                writeFile.put(byte2);
-            }
+            if (c3 != '=')
+                writeFile.put((unsigned char)(((v2 & 0x0F) << 4) | (v3 >> 2)));
 
-            // Третій байт — тільки якщо c4 не паддінг
-            if (c4 != '=') {
-                unsigned char byte3 = ((v3 & 0x03) << 6) | v4;
-                writeFile.put(byte3);
-            }
+            if (c4 != '=')
+                writeFile.put((unsigned char)(((v3 & 0x03) << 6) | v4));
+        }
+
+        if (isLastLine(line)) {
+            messageEnded = true;
         }
     }
 
@@ -201,7 +263,7 @@ int main() {
         cout << "Enter encoded file name: ";
         getline(cin, inputName);
 
-        // Пропонуємо ім'я: якщо файл має розширення .base64 — прибираємо його
+        // РЇРєС‰Рѕ С„Р°Р№Р» РјР°С” СЂРѕР·С€РёСЂРµРЅРЅСЏ .base64 вЂ” РїСЂРѕРїРѕРЅСѓС”С‚СЊСЃСЏ С–Рј'СЏ Р±РµР· РЅСЊРѕРіРѕ
         string suggestedName = inputName;
         if (inputName.size() > 7 && inputName.substr(inputName.size() - 7) == ".base64") {
             suggestedName = inputName.substr(0, inputName.size() - 7);
